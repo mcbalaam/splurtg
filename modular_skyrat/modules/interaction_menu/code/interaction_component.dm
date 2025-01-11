@@ -13,7 +13,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 
 /datum/component/interactable
 	/// A hard reference to the parent
-	var/mob/living/carbon/human/self = null
+	var/mob/living/self = null	// SPLURT EDIT - BORG QOL - Borgs should be able to initiate interactions
 	/// A list of interactions that the user can engage in.
 	var/list/datum/interaction/interactions
 	var/interact_last = 0
@@ -61,6 +61,19 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 		"unholy_pref" = /datum/preference/choiced/erp_status_unholy
 	)
 
+	/// List of mob's genitalia if they exist
+	var/list/genitalia = list(
+		"vagina" = null,
+		"anus" = null,
+		"nipples" = null,
+		"penis" = null
+	)
+
+	var/pleasure = 0
+	var/arousal = 0
+	var/pain = 0
+	var/lust_tolerance = 1
+
 /datum/component/interactable/Initialize(...)
 	if(QDELETED(parent))
 		qdel(src)
@@ -74,6 +87,22 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	add_verb(self, /mob/living/carbon/human/proc/interact_with)
 
 	build_interactions_list()
+
+	// Initialize the list when component is created
+	if(ismob(parent))
+		var/mob/living/L = parent
+		var/datum/component/genitals/G = L.GetComponent(/datum/component/genitals)
+		if(G?.genitalia)
+			genitalia = G.genitalia.Copy()
+		else
+			genitalia["vagina"] = null
+			genitalia["anus"] = null
+			genitalia["nipples"] = null
+			genitalia["penis"] = null
+
+	if(ishuman(parent))
+		var/mob/living/carbon/human/H = parent
+		lust_tolerance = H.dna?.features["lust_tolerance"] || 1
 
 /datum/component/interactable/proc/build_interactions_list()
 	interactions = list()
@@ -259,11 +288,11 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 
 	// Primary attributes (user's stats) - Only if user is human
 	if(human_user)
-		data["pleasure"] = human_user.pleasure || 0
+		data["pleasure"] = human_user.GetComponent(/datum/component/interactable)?.get_pleasure() || 0
 		data["maxPleasure"] = AROUSAL_LIMIT * (human_user.dna?.features["lust_tolerance"] || 1)
-		data["arousal"] = human_user.arousal || 0
+		data["arousal"] = human_user.GetComponent(/datum/component/interactable)?.get_arousal() || 0
 		data["maxArousal"] = AROUSAL_LIMIT
-		data["pain"] = human_user.pain || 0
+		data["pain"] = human_user.GetComponent(/datum/component/interactable)?.get_pain() || 0
 		data["maxPain"] = AROUSAL_LIMIT
 		data["selfAttributes"] = get_interaction_attributes(human_user)
 	else
@@ -278,12 +307,21 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	// Target attributes (self's stats) only if not self-targeting
 	if(user != self)
 		data["theirAttributes"] = get_interaction_attributes(self)
-		data["theirPleasure"] = self.pleasure || 0
-		data["theirMaxPleasure"] = AROUSAL_LIMIT * (self.dna.features["lust_tolerance"] || 1)
-		data["theirArousal"] = self.arousal || 0
-		data["theirMaxArousal"] = AROUSAL_LIMIT
-		data["theirPain"] = self.pain || 0
-		data["theirMaxPain"] = AROUSAL_LIMIT
+		var/datum/component/interactable/I = self.GetComponent(/datum/component/interactable)
+		if(I)
+			data["theirPleasure"] = I.get_pleasure()
+			data["theirMaxPleasure"] = AROUSAL_LIMIT * lust_tolerance
+			data["theirArousal"] = I.get_arousal()
+			data["theirMaxArousal"] = AROUSAL_LIMIT
+			data["theirPain"] = I.get_pain()
+			data["theirMaxPain"] = AROUSAL_LIMIT
+		else
+			data["theirPleasure"] = 0
+			data["theirMaxPleasure"] = AROUSAL_LIMIT
+			data["theirArousal"] = 0
+			data["theirMaxArousal"] = AROUSAL_LIMIT
+			data["theirPain"] = 0
+			data["theirMaxPain"] = AROUSAL_LIMIT
 	else
 		data["theirAttributes"] = list()
 		data["theirPleasure"] = null
@@ -371,12 +409,12 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	if(ishuman(user) && can_lewd_strip(user, self))
 		if(self.client?.prefs?.read_preference(/datum/preference/toggle/erp/sex_toy))
 			if(self.has_vagina())
-				parts += list(generate_strip_entry(ORGAN_SLOT_VAGINA, self, user, self.vagina))
+				parts += list(generate_strip_entry(ORGAN_SLOT_VAGINA, self, user, genitalia["vagina"]))
 			if(self.has_penis())
-				parts += list(generate_strip_entry(ORGAN_SLOT_PENIS, self, user, self.penis))
+				parts += list(generate_strip_entry(ORGAN_SLOT_PENIS, self, user, genitalia["penis"]))
 			if(self.has_anus())
-				parts += list(generate_strip_entry(ORGAN_SLOT_ANUS, self, user, self.anus))
-			parts += list(generate_strip_entry(ORGAN_SLOT_NIPPLES, self, user, self.nipples))
+				parts += list(generate_strip_entry(ORGAN_SLOT_ANUS, self, user, genitalia["anus"]))
+			parts += list(generate_strip_entry(ORGAN_SLOT_NIPPLES, self, user, genitalia["nipples"]))
 
 	data["lewd_slots"] = parts
 
@@ -640,3 +678,27 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 		return
 
 	menu.open_interaction_menu(src, usr)
+
+/datum/component/interactable/proc/get_pleasure()
+	return pleasure
+
+/datum/component/interactable/proc/set_pleasure(amount)
+	pleasure = clamp(amount, 0, AROUSAL_LIMIT)
+	if(self)
+		SStgui.update_uis(self)
+
+/datum/component/interactable/proc/get_arousal()
+	return arousal
+
+/datum/component/interactable/proc/set_arousal(amount)
+	arousal = clamp(amount, 0, AROUSAL_LIMIT)
+	if(self)
+		SStgui.update_uis(self)
+
+/datum/component/interactable/proc/get_pain()
+	return pain
+
+/datum/component/interactable/proc/set_pain(amount)
+	pain = clamp(amount, 0, AROUSAL_LIMIT)
+	if(self)
+		SStgui.update_uis(self)

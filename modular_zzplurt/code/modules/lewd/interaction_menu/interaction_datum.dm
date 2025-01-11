@@ -17,6 +17,12 @@
 	var/list/additional_details = list()
 	/// Interaction modifier flags, edits how the interaction works from its original definition
 	var/interaction_modifier_flags = NONE
+	/// Pleasure amount for the interaction
+	var/pleasure_amount = 0
+	/// Arousal amount for the interaction
+	var/arousal_amount = 0
+	/// Pain amount for the interaction
+	var/pain_amount = 0
 
 	/// List of clown-specific messages for different genital types
 	var/static/list/clown_genital_messages = list(

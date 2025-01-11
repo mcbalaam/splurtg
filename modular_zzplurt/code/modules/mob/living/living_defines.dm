@@ -4,3 +4,6 @@
 	var/admin_sleeping = FALSE
 	var/datum/action/sizecode_smallsprite/small_sprite = new
 	var/fuzzy = FALSE
+
+/mob/living/proc/handle_arousal()
+	return

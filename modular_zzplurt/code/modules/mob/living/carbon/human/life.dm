@@ -17,3 +17,13 @@
 		if(wrists.max_heat_protection_temperature && wrists.max_heat_protection_temperature >= temperature)
 			. |= wrists.heat_protection
 	//
+
+/mob/living/carbon/human/handle_arousal()
+	var/datum/component/interactable/I = GetComponent(/datum/component/interactable)
+	if(!I)
+		return
+
+	if(I.get_arousal() > 0)
+		I.set_arousal(I.get_arousal() - 1)
+	if(I.get_pleasure() > 0)
+		I.set_pleasure(I.get_pleasure() - 1)

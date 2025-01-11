@@ -21,6 +21,8 @@
 	#define GENITAL_BELLY 6
 	#define GENITAL_BUTT 7
 
+	var/arousal_amount = 1  // Base arousal increase per tick
+
 /**
 * Handle belly growth
 *
@@ -193,3 +195,8 @@
 				shrink_belly(exposed_mob, suppress_chat)
 			if(GENITAL_BUTT)
 				shrink_butt(exposed_mob, suppress_chat)
+
+/datum/reagent/drug/aphrodisiac/proc/affect_blood(mob/living/carbon/human/M)
+	var/datum/component/interactable/I = M.GetComponent(/datum/component/interactable)
+	if(I)
+		I.set_arousal(I.get_arousal() + arousal_amount)
