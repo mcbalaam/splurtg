@@ -95,6 +95,18 @@ GLOBAL_LIST_EMPTY_TYPED(interaction_instances, /datum/interaction)
 	if(!message)
 		message_admins("Interaction had a null message list. '[name]'")
 		return
+
+	// SPLURT EDIT - INTERACTIONS REFACTOR
+	var/datum/component/interactable/I = target.GetComponent(/datum/component/interactable)
+	if(I)
+		I.set_pleasure(I.get_pleasure() + pleasure_amount)
+		I.set_arousal(I.get_arousal() + arousal_amount)
+		I.set_pain(I.get_pain() + pain_amount)
+
+	if(user == target)
+		SStgui.update_uis(user)
+	// SPLURT EDIT END
+
 	if(!islist(message) && istext(message))
 		message_admins("Deprecated message handling for '[name]'. Correct format is a list with one entry. This message will only show once.")
 		message = list(message)

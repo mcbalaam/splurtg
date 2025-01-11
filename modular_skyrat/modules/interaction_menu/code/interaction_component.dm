@@ -255,7 +255,6 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	var/mob/living/carbon/human/human_user = null
 	if(ishuman(user))
 		human_user = user
-
 	for(var/datum/interaction/interaction in interactions)
 		if(!can_interact(interaction, user))
 			continue
