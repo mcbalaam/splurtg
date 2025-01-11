@@ -13,7 +13,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 
 /datum/component/interactable
 	/// A hard reference to the parent
-	var/mob/living/self = null	// SPLURT EDIT - BORG QOL - Borgs should be able to initiate interactions
+	var/mob/living/self = null	// SPLURT EDIT - INTERACTIONS REFACTOR - Anyone should be able to initiate interactions
 	/// A list of interactions that the user can engage in.
 	var/list/datum/interaction/interactions
 	var/interact_last = 0
@@ -61,6 +61,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 		"unholy_pref" = /datum/preference/choiced/erp_status_unholy
 	)
 
+	// SPLURT EDIT START - INTERACTIONS REFACTOR - Added genitalia list in case the mob has none
 	/// List of mob's genitalia if they exist
 	var/list/genitalia = list(
 		"vagina" = null,
@@ -73,6 +74,8 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	var/arousal = 0
 	var/pain = 0
 	var/lust_tolerance = 1
+
+	// SPLURT EDIT END
 
 /datum/component/interactable/Initialize(...)
 	if(QDELETED(parent))
@@ -88,7 +91,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 
 	build_interactions_list()
 
-	// Initialize the list when component is created
+	// SPLURT EDIT START - INTERACTIONS REFACTOR - Initialize the list when component is created
 	if(ismob(parent))
 		var/mob/living/L = parent
 		var/datum/component/genitals/G = L.GetComponent(/datum/component/genitals)
@@ -103,6 +106,8 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	if(ishuman(parent))
 		var/mob/living/carbon/human/H = parent
 		lust_tolerance = H.dna?.features["lust_tolerance"] || 1
+
+	// SPLURT EDIT END
 
 /datum/component/interactable/proc/build_interactions_list()
 	interactions = list()
@@ -285,6 +290,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	data["isTargetSelf"] = (user == self)
 	data["interactingWith"] = user == self ? "Interacting with yourself..." : "Interacting with \the [self]..."
 
+	// SPLURT EDIT START - INTERACTIONS REFACTOR - Using the component variables instead of the mob's variables
 	// Primary attributes (user's stats) - Only if user is human
 	if(human_user)
 		data["pleasure"] = human_user.GetComponent(/datum/component/interactable)?.get_pleasure() || 0
@@ -294,6 +300,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 		data["pain"] = human_user.GetComponent(/datum/component/interactable)?.get_pain() || 0
 		data["maxPain"] = AROUSAL_LIMIT
 		data["selfAttributes"] = get_interaction_attributes(human_user)
+	// SPLURT EDIT END
 	else
 		data["pleasure"] = 0
 		data["maxPleasure"] = AROUSAL_LIMIT
@@ -306,6 +313,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	// Target attributes (self's stats) only if not self-targeting
 	if(user != self)
 		data["theirAttributes"] = get_interaction_attributes(self)
+		// SPLURT EDIT START - INTERACTIONS REFACTOR - Using the component variables instead of the mob's variables
 		var/datum/component/interactable/I = self.GetComponent(/datum/component/interactable)
 		if(I)
 			data["theirPleasure"] = I.get_pleasure()
@@ -321,6 +329,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 			data["theirMaxArousal"] = AROUSAL_LIMIT
 			data["theirPain"] = 0
 			data["theirMaxPain"] = AROUSAL_LIMIT
+		// SPLURT EDIT END
 	else
 		data["theirAttributes"] = list()
 		data["theirPleasure"] = null
@@ -407,6 +416,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	var/list/parts = list()
 	if(ishuman(user) && can_lewd_strip(user, self))
 		if(self.client?.prefs?.read_preference(/datum/preference/toggle/erp/sex_toy))
+			// SPLURT EDIT START - INTERACTIONS REFACTOR - Using the component variables instead of the mob's variables
 			if(self.has_vagina())
 				parts += list(generate_strip_entry(ORGAN_SLOT_VAGINA, self, user, genitalia["vagina"]))
 			if(self.has_penis())
@@ -414,7 +424,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 			if(self.has_anus())
 				parts += list(generate_strip_entry(ORGAN_SLOT_ANUS, self, user, genitalia["anus"]))
 			parts += list(generate_strip_entry(ORGAN_SLOT_NIPPLES, self, user, genitalia["nipples"]))
-
+			// SPLURT EDIT END
 	data["lewd_slots"] = parts
 
 	return data
@@ -678,6 +688,7 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 
 	menu.open_interaction_menu(src, usr)
 
+// SPLURT EDIT START - INTERACTIONS REFACTOR - Moved pleasure, pain, and arousal variables to the component - hence why we need getters and setters now
 /datum/component/interactable/proc/get_pleasure()
 	return pleasure
 
@@ -701,3 +712,4 @@ GLOBAL_LIST_INIT(interaction_menu_preferences, typecacheof(list(
 	pain = clamp(amount, 0, AROUSAL_LIMIT)
 	if(self)
 		SStgui.update_uis(self)
+// SPLURT EDIT END

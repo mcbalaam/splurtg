@@ -96,7 +96,7 @@ GLOBAL_LIST_EMPTY_TYPED(interaction_instances, /datum/interaction)
 		message_admins("Interaction had a null message list. '[name]'")
 		return
 
-	// SPLURT EDIT - INTERACTIONS REFACTOR
+	// SPLURT EDIT START - INTERACTIONS REFACTOR - Using the component variables instead of the mob's variables
 	var/datum/component/interactable/I = target.GetComponent(/datum/component/interactable)
 	if(I)
 		I.set_pleasure(I.get_pleasure() + pleasure_amount)
